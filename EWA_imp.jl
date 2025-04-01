@@ -115,7 +115,7 @@ function run_EWA(parameters; T=1000000000, ϵ=1e-4)
             window += 1
         end
 
-        if t > 10000 && window > 10000
+        if t > 500 && window > 50
             println("Converged at iter: $t")
             break
         end
