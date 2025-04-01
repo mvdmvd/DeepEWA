@@ -2,13 +2,32 @@ module EWA
 
 using Distributions, NNlib, GameTheory # NNlib for numerically stable softmax
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# # Initialisation
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 # some example games
 coord_payoff = [[5 1; 1 4], [5 1; 1 4]] #player 1, player 2 payoff matrixes respectively
 pris_payoff = [[5 20; 0 1], [5 20; 0 1]]
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # GameTheory solutions
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+function find_NE_mixed(payoff)
+    g = NormalFormGame([Player(payoff[1]), Player(payoff[2])])
+    found = support_enumeration(g)
+    NE = [collect(ne) for ne in found]
+    return NE
+end
+
+function find_NE_pure(payoff)
+    g = NormalFormGame([Player(payoff[1]), Player(payoff[2])])
+    found = pure_nash(g)
+    NE = [collect(ne) for ne in found]
+    return NE
+end
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # Initialisation
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 
 function init_EWA(;
@@ -84,7 +103,7 @@ end
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # # Run simulation
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-function run_EWA(parameters; T=1000000000, ϵ=1e-4)
+function run_EWA_mixed(parameters; T=1000000000, ϵ=1e-4)
     Q₀, κ, α, N₀, δ, payoff, β = parameters
     println("Prior Q: $Q₀, prior N: $N₀")
 
@@ -95,8 +114,9 @@ function run_EWA(parameters; T=1000000000, ϵ=1e-4)
 
     conv = 0
     window = 0
+    NE_found = false
     for t in 1:T
-        if t ≤ 10 || (t ≤ 1000 && t % 500 == 0) || (t ≤ 10000 && t % 5000 == 0) || (t ≤ 1000000 && t % 1000000 == 0)
+        if (t ≤ 10 && t % 2 == 0) || (t ≤ 100 && t % 50 == 0)
             println("Iter $t: σ=$σₜ, s=$sₜ, Q=$Qₜ, N=$Nₜ")
         end
 
@@ -123,19 +143,70 @@ function run_EWA(parameters; T=1000000000, ϵ=1e-4)
     end
     freq_1 = count_1 / conv
     freq_2 = count_2 / conv
+    conv_sol = [[freq_1, 1 - freq_1], [freq_2, 1 - freq_2]]
+    NE = find_NE_mixed(payoff)
 
-    return Qₜ, Nₜ, sₜ, σₜ, freq_1, freq_2
+    for ne in NE
+        for i in eachindex(ne)
+            for j in 1:2
+                if all(all.(abs.(conv_sol[j] .- ne[i]) .< 0.015))
+                    NE_found = true
+                end
+            end
+        end
+    end
+
+    return Qₜ, Nₜ, sₜ, σₜ, conv_sol, NE_found, NE
 end
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# # GameTheory solutions
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
-function find_NE(payoff)
-    g = NormalFormGame([Player(payoff[1]), Player(payoff[2])])
-    NE = support_enumeration(g)
-    return NE
+
+
+
+function run_EWA_pure(parameters; T=1000000, ϵ=1e-4)
+    Q₀, κ, α, N₀, δ, payoff, β = parameters
+    println("Prior Q: $Q₀, prior N: $N₀")
+
+    a₁ = 0
+    a₂ = 0
+
+    Qₜ, Nₜ, sₜ, σₜ = EWA_step!(Q₀, N₀, κ, α, δ, payoff, β) # first iter from priors
+
+    conv = 0
+    window = 0
+    lim_chaos = false
+    NE_found = false
+    for t in 1:T
+        if (t ≤ 10 && t % 2 == 0) || (t ≤ 100 && t % 50 == 0)
+            println("Iter $t: σ=$σₜ, s=$sₜ, Q=$Qₜ, N=$Nₜ")
+        end
+
+        old_a₁ = a₁
+        old_a₂ = a₂
+
+        Qₜ, Nₜ, sₜ, σₜ = EWA_step!(Qₜ, Nₜ, κ, α, δ, payoff, β)
+
+        a₁ = sₜ[1]
+        a₂ = sₜ[2]
+
+        if old_a₁ == a₁ && old_a₂ == a₂
+            window += 1
+        end
+
+        if t > 500 && window > 10000
+            println("Converged at iter: $t")
+            break
+        end
+        conv = t
+    end
+    lim_chaos = conv ≥ T ? true : lim_chaos
+    Nash = find_NE_pure(payoff)
+    NE_found = sₜ ∈ Nash ? true : NE_found
+
+    return Qₜ, Nₜ, sₜ, σₜ, lim_chaos, NE_found, Nash
 end
+
+
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 ############################################################################################################################################
