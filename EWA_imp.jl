@@ -1,6 +1,6 @@
 module EWA
 
-using Distributions, NNlib # NNlib for numerically stable softmax
+using Distributions, NNlib, GameTheory # NNlib for numerically stable softmax
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # # Initialisation
@@ -125,6 +125,16 @@ function run_EWA(parameters; T=1000000000, ϵ=1e-4)
     freq_2 = count_2 / conv
 
     return Qₜ, Nₜ, sₜ, σₜ, freq_1, freq_2
+end
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # GameTheory solutions
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+function find_NE(payoff)
+    g = NormalFormGame([Player(payoff[1]), Player(payoff[2])])
+    NE = support_enumeration(g)
+    return NE
 end
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
