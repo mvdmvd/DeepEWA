@@ -10,6 +10,7 @@ using Distributions, NNlib # NNlib for numerically stable softmax
 coord_payoff = [[5 1; 1 4], [5 1; 1 4]] #player 1, player 2 payoff matrixes respectively
 pris_payoff = [[5 20; 0 1], [5 20; 0 1]]
 
+
 function init_EWA(;
     Q₀=[[0.0, 0.0], [0.0, 0.0]], # Prior attractions
     κ=0.0,
@@ -83,38 +84,47 @@ end
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # # Run simulation
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-function run_EWA(parameters; T=1000000, ϵ=1e-6)
+function run_EWA(parameters; T=1000000000, ϵ=1e-4)
     Q₀, κ, α, N₀, δ, payoff, β = parameters
     println("Prior Q: $Q₀, prior N: $N₀")
 
-    Q_hist = []
-    N_hist = []
-    s_hist = []
-    σ_hist = []
+    count_1 = 0
+    count_2 = 0
 
     Qₜ, Nₜ, sₜ, σₜ = EWA_step!(Q₀, N₀, κ, α, δ, payoff, β) # first iter from priors
 
-    iter = 0
+    conv = 0
+    window = 0
     for t in 1:T
         if t ≤ 10 || (t ≤ 1000 && t % 500 == 0) || (t ≤ 10000 && t % 5000 == 0) || (t ≤ 1000000 && t % 1000000 == 0)
             println("Iter $t: σ=$σₜ, s=$sₜ, Q=$Qₜ, N=$Nₜ")
         end
-        push!(Q_hist, Qₜ)
-        push!(σ_hist, σₜ)
-        push!(s_hist, sₜ)
-        push!(N_hist, Nₜ)
 
-        prev_σ = σₜ
         Qₜ, Nₜ, sₜ, σₜ = EWA_step!(Qₜ, Nₜ, κ, α, δ, payoff, β)
 
-        if t > 10000000 && all(abs.(σₜ[1] .- prev_σ[1]) .< ϵ) && all(abs.(σₜ[2] .- prev_σ[2]) .< ϵ)
+        old_1 = count_1 / (t - 1)
+        old_2 = count_2 / (t - 1)
+
+        count_1 += sₜ[1] == 1 ? 1 : 0
+        count_2 += sₜ[2] == 1 ? 1 : 0
+
+        new_1 = count_1 / t
+        new_2 = count_2 / t
+
+        if abs(old_1 - new_1) < ϵ && abs(old_2 - new_2) < ϵ
+            window += 1
+        end
+
+        if t > 10000 && window > 10000
             println("Converged at iter: $t")
             break
         end
-        iter = t
+        conv = t
     end
-    println("Final iter: $iter")
-    return Qₜ, Nₜ, sₜ, σₜ, Q_hist, N_hist, s_hist, σ_hist
+    freq_1 = count_1 / conv
+    freq_2 = count_2 / conv
+
+    return Qₜ, Nₜ, sₜ, σₜ, freq_1, freq_2
 end
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
