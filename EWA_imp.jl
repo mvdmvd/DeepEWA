@@ -103,7 +103,7 @@ function run_EWA(parameters; T=1000000, ϵ=1e-6)
         push!(s_hist, sₜ)
         push!(N_hist, Nₜ)
 
-        prev_Qₜ = Qₜ
+        prev_σ = σₜ
         Qₜ, Nₜ, sₜ, σₜ = EWA_step!(Qₜ, Nₜ, κ, α, δ, payoff, β)
 
         if t > 10000 && all(abs.(Qₜ[1] .- prev_σ[1]) .< ϵ) && all(abs.(σₜ[2] .- prev_σ[2]) .< ϵ)
