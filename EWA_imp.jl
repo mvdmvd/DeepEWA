@@ -94,6 +94,7 @@ function run_EWA(parameters; T=1000000, ϵ=1e-6)
 
     Qₜ, Nₜ, sₜ, σₜ = EWA_step!(Q₀, N₀, κ, α, δ, payoff, β) # first iter from priors
 
+    iter = 0
     for t in 1:T
         if t ≤ 10 || (t ≤ 1000 && t % 500 == 0) || (t ≤ 10000 && t % 5000 == 0) || (t ≤ 1000000 && t % 1000000 == 0)
             println("Iter $t: σ=$σₜ, s=$sₜ, Q=$Qₜ, N=$Nₜ")
@@ -106,11 +107,13 @@ function run_EWA(parameters; T=1000000, ϵ=1e-6)
         prev_σ = σₜ
         Qₜ, Nₜ, sₜ, σₜ = EWA_step!(Qₜ, Nₜ, κ, α, δ, payoff, β)
 
-        if t > 10000 && all(abs.(Qₜ[1] .- prev_σ[1]) .< ϵ) && all(abs.(σₜ[2] .- prev_σ[2]) .< ϵ)
+        if t > 10000000 && all(abs.(σₜ[1] .- prev_σ[1]) .< ϵ) && all(abs.(σₜ[2] .- prev_σ[2]) .< ϵ)
             println("Converged at iter: $t")
             break
         end
+        iter = t
     end
+    println("Final iter: $iter")
     return Qₜ, Nₜ, sₜ, σₜ, Q_hist, N_hist, s_hist, σ_hist
 end
 
