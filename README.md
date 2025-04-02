@@ -1,3 +1,4 @@
 # DeepEWA
-EWA_imp is the basic implementation of EWA, without simplifications.
-test_EWA is a notebook to test different parameterisations for different games.
+EWA notebooks folder contains testing environment for the mixed and pure EWA versions
+
+DeepEWA_funs&structs.jl contains all funcitons and structs the notebooks run on
