@@ -7,21 +7,20 @@ dom = [[5 0; 20 1], [5 0; 20 1]]
 cyclic = [[5 1; 1 4], [-5 1; 1 -4]]
 
 payoffs = [coord, dom, cyclic]
-payoff_names = ["Coordination", "Dominance", "Cyclic"]
+payoff_names = ["Coordination", "Dominance", "Cyclic"] # we collect data for 3 games
 
 
 LinGrid1 = 0.0:0.1:1.0
 LogGridβ = vcat(0.0, collect(logrange(1e-6, 999.0, (length(LinGrid1) - 1))))
-shots = 1
+shots = 4 # How many times is the same params ran? multiple to find multiple NE
 
 total_iterations = length(LinGrid1)^3 * length(LogGridβ) * length(payoffs)
 
-data = Vector{Any}(undef, total_iterations)
-
-
+data = Vector{Any}(undef, total_iterations) # stores the final data
 
 total_iterations = length(LinGrid1)^3 * length(LogGridβ) * length(payoffs)
 
+# below  setup is partially suggested by Google Gemini to make it fast
 n_alpha = length(LinGrid1)
 n_delta = length(LinGrid1)
 n_kappa = length(LinGrid1)
@@ -29,14 +28,10 @@ n_beta = length(LogGridβ)
 n_payoffs = length(payoffs)
 parameter_space = CartesianIndices((n_payoffs, n_alpha, n_delta, n_kappa, n_beta))
 
-
-
 @showprogress for i in 1:total_iterations
     if rand() < 0.7
         continue
     end
-
-
     idx_tuple = parameter_space[i]
     payoff_idx, alpha_idx, delta_idx, kappa_idx, beta_idx = Tuple(idx_tuple)
     current_payoff = payoffs[payoff_idx]
@@ -79,7 +74,11 @@ parameter_space = CartesianIndices((n_payoffs, n_alpha, n_delta, n_kappa, n_beta
             L = 5
         end
     end
-    data[i] = (PayoffName=current_payoff_name, Alpha=α, Delta=δ, Kappa=κ, Beta=β, ResultCode=L)
+    data[i] = (PayoffName=current_payoff_name, Alpha=α, Delta=δ, Kappa=κ, Beta=β, ResultCode=L) # each element in the data vector is such a vector, should be easy to make a table , making L the label (convergence category)
 end
+
+# This is extremely slow, somehow you need to efficiently sample points, such a grid search is impossible
+# Maybe the EWA can be faster. Otherwise, design some training loop that samples within the loop
+# Make a function that just generates random params and chooses a random game and then computes L, embed this in training loop
 
 print(data)
