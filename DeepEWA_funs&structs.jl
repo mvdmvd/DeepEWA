@@ -135,7 +135,7 @@ function run_EWA_mixed(parameters; T=1000000000, ϵ=1e-4)
             window += 1
         end
 
-        if t > 500 && window > 50
+        if t > 100 && window > 100
             println("Converged at iter: $t")
             break
         end
@@ -193,7 +193,7 @@ function run_EWA_pure(parameters; T=1000000, ϵ=1e-4)
             window += 1
         end
 
-        if t > 500 && window > 10000
+        if t > 100 && window > 100
             println("Converged at iter: $t")
             break
         end
