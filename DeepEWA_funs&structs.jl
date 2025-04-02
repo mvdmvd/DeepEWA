@@ -103,7 +103,7 @@ end
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # # Run simulation
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-function run_EWA_mixed(parameters; T=1000000000, ϵ=1e-4)
+function run_EWA_mixed(parameters; T=1000000000, ϵ=1e-4, print = false)
     Q₀, κ, α, N₀, δ, payoff, β = parameters
     println("Prior Q: $Q₀, prior N: $N₀")
 
@@ -117,7 +117,10 @@ function run_EWA_mixed(parameters; T=1000000000, ϵ=1e-4)
     NE_found = false
     for t in 1:T
         if (t ≤ 10 && t % 2 == 0) || (t ≤ 100 && t % 50 == 0)
-            println("Iter $t: σ=$σₜ, s=$sₜ, Q=$Qₜ, N=$Nₜ")
+            if print == true
+                if (t ≤ 10 && t % 2 == 0) || (t ≤ 100 && t % 50 == 0)
+                    println("Iter $t: σ=$σₜ, s=$sₜ, Q=$Qₜ, N=$Nₜ")
+                end
         end
 
         Qₜ, Nₜ, sₜ, σₜ = EWA_step!(Qₜ, Nₜ, κ, α, δ, payoff, β)
@@ -136,7 +139,9 @@ function run_EWA_mixed(parameters; T=1000000000, ϵ=1e-4)
         end
 
         if t > 100 && window > 100
-            println("Converged at iter: $t")
+            if print == true
+                println("Converged at iter: $t")
+            end
             break
         end
         conv = t
@@ -163,7 +168,7 @@ end
 
 
 
-function run_EWA_pure(parameters; T=1000000, ϵ=1e-4)
+function run_EWA_pure(parameters; T=1000000, ϵ=1e-4, print=false)
     Q₀, κ, α, N₀, δ, payoff, β = parameters
     println("Prior Q: $Q₀, prior N: $N₀")
 
@@ -177,8 +182,10 @@ function run_EWA_pure(parameters; T=1000000, ϵ=1e-4)
     lim_chaos = false
     NE_found = false
     for t in 1:T
-        if (t ≤ 10 && t % 2 == 0) || (t ≤ 100 && t % 50 == 0)
-            println("Iter $t: σ=$σₜ, s=$sₜ, Q=$Qₜ, N=$Nₜ")
+        if print == true
+            if (t ≤ 10 && t % 2 == 0) || (t ≤ 100 && t % 50 == 0)
+                println("Iter $t: σ=$σₜ, s=$sₜ, Q=$Qₜ, N=$Nₜ")
+            end
         end
 
         old_a₁ = a₁
@@ -194,7 +201,9 @@ function run_EWA_pure(parameters; T=1000000, ϵ=1e-4)
         end
 
         if t > 100 && window > 100
-            println("Converged at iter: $t")
+            if print == true
+                println("Converged at iter: $t")
+            end
             break
         end
         conv = t
