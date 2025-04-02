@@ -1,5 +1,5 @@
 include("/Users/meesvandartel/Desktop/Coursework/CGT/DeepEWA/DeepEWA_funs&structs.jl")
-using Flux, Statistics, ProgressMeter, .EWA, Base.Iterators, ProgressMeter, Random
+using Flux, Statistics, ProgressMeter, .EWA, Base.Iterators, Random
 using Base.Threads
 
 coord = [[5 1; 1 4], [5 1; 1 4]]

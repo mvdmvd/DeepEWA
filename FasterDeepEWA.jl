@@ -54,19 +54,24 @@ function EWA_step!(
 
     # new actions
     @inbounds for i ∈ 1:2 # for both players
-        local Qᵢ = Qₜ[i] # get attractions vector for player i
+        Q₁, Q₂ = Qₜ[i...] # get attractions vector for player i
         if isinf(β) # if deterministic policy:
-            if Qᵢ[1] > Qᵢ[2]
+            if Q₁ > Q₂
                 sₜ[i] = 1
                 continue
-            elseif Qᵢ[1] < Qᵢ[2]
+            elseif Q₁ < Q₂
                 sₜ[i] = 2
                 continue
             else
                 p₁ = 0.5 # tie breaker, I guess this is still stochastic, maybe choose deterministically?
             end
         else
-            local p₁ = exp.(logsoftmax(β * Q)) # log softmax for numerical stability (for high β values)
+            local s1 = β * Q₁
+            local s2 = β * Q₂
+            local m = s1 > s2 ? s1 : s2
+            local exp1 = exp(s1 - m)
+            local exp2 = exp(s2 - m)
+            local p₁ = exp1 / (exp1 + exp2)
         end
         sₜ[i] = (rand(Bernoulli(p₁)) == 1 ? 1 : 2) # draw an action from the mixed strategy vector. 2-Binomial(μ)= 1 with P=μ, 2 else.
     end
