@@ -84,7 +84,7 @@ function EWA_step!( # step function first selects actions based off attractions,
 end
 
 function Run_FastEWA(parameters::Tuple{Vector{Int64},Vector{Float64},Vector{Vector{Float64}},Float64,Float64,Float64,Float64,Float64,Vector{Vector}};
-    T=1000)
+    T=10000)
     s₀, μ₀, Q₀, N₀, α, κ, δ, β, game = parameters
     payoff, NE = game
 
@@ -96,7 +96,7 @@ function Run_FastEWA(parameters::Tuple{Vector{Int64},Vector{Float64},Vector{Vect
         local μ₁, μ₂ = μ ./ (t + 1) # bayesian updating of a₁ probabilities 
         local σ = [[μ₁, 1 - μ₁], [μ₂, 1 - μ₂]] # compute mathematical expectation of strategies
 
-        if any(isapprox(σ, ne, atol=0.1) for ne in NE)
+        if any(isapprox(σ, ne, atol=0.01) for ne in NE)
             NE_found = true # break if converged expectation is a NE
             # future: check for multiple NE, FP, limit cycles, chaos
             break
