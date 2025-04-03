@@ -94,10 +94,11 @@ function Run_FastEWA(parameters::Tuple{Vector{Int64},Vector{Float64},Vector{Vect
     @inbounds for t in 1:T # T=1000 is assumed to be close enough to ∞, test this for more rigor (low T is required for speed).
         sₜ, μ, Qₜ, Nₜ = EWA_step!(sₜ, μ, Qₜ, Nₜ, α, κ, δ, β, payoff)
         local μ₁, μ₂ = μ ./ (t + 1) # bayesian updating of a₁ probabilities 
-        local σ = [[μ₁, 1 - μ₁], [μ₂, 1 - μ₂]] # 
+        local σ = [[μ₁, 1 - μ₁], [μ₂, 1 - μ₂]] # compute mathematical expectation of strategies
 
         if any(isapprox(σ, ne, atol=0.1) for ne in NE)
-            NE_found = true
+            NE_found = true # break if converged expectation is a NE
+            # future: check for multiple NE, FP, limit cycles, chaos
             break
         end
     end
