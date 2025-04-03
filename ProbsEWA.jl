@@ -9,7 +9,7 @@ function find_NE_mixed(payoff::Vector{Matrix{Int64}})
 end
 
 
-function init_probsEWA(; # initialisation function
+function init_pEWA(; # initialisation function
     s₀=[0, 0],                   # empty actions vector
     μ₀=[], # μᵢ represents the probability of playing a₁
     Q₀=[[0.0001, 0.0001], [0.0001, 0.0001]], # prior attractions (technically a parameter)
@@ -56,36 +56,28 @@ function probsEWA_step!( # step function first selects actions based off attract
 end
 
 
-function multicat_probsEWA(parameters::Tuple{Vector{Int64},Vector{Any},Vector{Vector{Float64}},Float64,Float64,Float64,Float64,Float64,Vector{Vector}};
+function multicat_pEWA(parameters::Tuple{Vector{Int64},Vector{Any},Vector{Vector{Float64}},Float64,Float64,Float64,Float64,Float64,Vector{Vector}};
     T=3000)
     s₀, μ₀, Q₀, N₀, α, κ, δ, β, game = parameters
     payoff, NE = game
 
     # convergence criterion is whether the expectation of the histories of play are an NE
-    local cycles, pure_NE, mixed_NE, FP = true, false, false, false # set to true if converged = NE 
-    conv = T
+    local cat = 1
     sₜ, μ, Qₜ, Nₜ = probsEWA_step!(s₀, μ₀, Q₀, N₀, α, κ, δ, β, payoff) # the first EWA step is based on the priors
-    @inbounds for t in 1:T # T=1000 is assumed to be close enough to ∞, test this for more rigor (low T is required for speed).
+    @inbounds for t in 1:T
         sₜ, μ, Qₜ, Nₜ = probsEWA_step!(sₜ, μ, Qₜ, Nₜ, α, κ, δ, β, payoff)
         if t > 6 && all(isapprox(μ[end-5:end-1], μ[end-4:end], atol=0.03))
-            cycles = false # break if converged expectation is a NE
-            # future: check for multiple NE, FP, limit cycles, chaos
             if any(isapprox(μ[end], ne, atol=0.01) for ne in NE)
-                if any(x -> isapprox(x, 1.0, atol=0.01), μ[end][1])
-                    pure_NE = true
-                else
-                    mixed_NE = true
-                end
+                any(x -> isapprox(x, 1.0, atol=0.01), μ[end][1]) ? cat = 4 : cat = 3
             else
-                FP = true
+                cat = 2
             end
-            conv = t
             break
         end
 
     end
 
-    return cycles, pure_NE, mixed_NE, FP
+    return cat
 end
 
 end
