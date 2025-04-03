@@ -57,20 +57,20 @@ end
 
 
 function multicat_pEWA(parameters::Tuple{Vector{Int64},Vector{Any},Vector{Vector{Float64}},Float64,Float64,Float64,Float64,Float64,Vector{Vector}};
-    T=3000)
+    T=4000)
     s₀, μ₀, Q₀, N₀, α, κ, δ, β, game = parameters
     payoff, NE = game
 
     # convergence criterion is whether the expectation of the histories of play are an NE
-    local cat = 1
+    local cat = 1 # 1 = cycles/chaos, 2 = mixed FP, 3 = pure FP, 4= pure NE
     sₜ, μ, Qₜ, Nₜ = probsEWA_step!(s₀, μ₀, Q₀, N₀, α, κ, δ, β, payoff) # the first EWA step is based on the priors
     @inbounds for t in 1:T
         sₜ, μ, Qₜ, Nₜ = probsEWA_step!(sₜ, μ, Qₜ, Nₜ, α, κ, δ, β, payoff)
-        if t > 6 && all(isapprox(μ[end-5:end-1], μ[end-4:end], atol=0.03))
-            if any(isapprox(μ[end], ne, atol=0.01) for ne in NE)
-                any(x -> isapprox(x, 1.0, atol=0.01), μ[end][1]) ? cat = 4 : cat = 3
+        if t > 6 && all(isapprox(μ[end-5:end-1], μ[end-4:end], atol=0.005))
+            if any(isapprox(μ[end], ne, atol=0.003) for ne in NE)
+                cat = 4
             else
-                cat = 2
+                any(x -> isapprox(x, 1.0, atol=0.01), μ[end][1]) ? cat = 3 : cat = 2
             end
             break
         end
