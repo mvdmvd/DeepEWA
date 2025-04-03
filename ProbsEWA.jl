@@ -57,7 +57,7 @@ end
 
 
 function multicat_probsEWA(parameters::Tuple{Vector{Int64},Vector{Any},Vector{Vector{Float64}},Float64,Float64,Float64,Float64,Float64,Vector{Vector}};
-    T=1000)
+    T=3000)
     s₀, μ₀, Q₀, N₀, α, κ, δ, β, game = parameters
     payoff, NE = game
 
@@ -67,7 +67,7 @@ function multicat_probsEWA(parameters::Tuple{Vector{Int64},Vector{Any},Vector{Ve
     sₜ, μ, Qₜ, Nₜ = probsEWA_step!(s₀, μ₀, Q₀, N₀, α, κ, δ, β, payoff) # the first EWA step is based on the priors
     @inbounds for t in 1:T # T=1000 is assumed to be close enough to ∞, test this for more rigor (low T is required for speed).
         sₜ, μ, Qₜ, Nₜ = probsEWA_step!(sₜ, μ, Qₜ, Nₜ, α, κ, δ, β, payoff)
-        if t > 22 && all(isapprox(μ[end-21:end-1], μ[end-20:end], atol=0.001))
+        if t > 6 && all(isapprox(μ[end-5:end-1], μ[end-4:end], atol=0.03))
             cycles = false # break if converged expectation is a NE
             # future: check for multiple NE, FP, limit cycles, chaos
             if any(isapprox(μ[end], ne, atol=0.01) for ne in NE)

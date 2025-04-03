@@ -1,5 +1,8 @@
 module fEWA
 
+
+### Convergence of these algos is based on history of play!!! not recommended
+
 using Distributions, GameTheory
 
 # returns a vector of all pure and mixed NE for a 2x2 normal form in the format Vector{Matrix{Int64}}
