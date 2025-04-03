@@ -87,7 +87,7 @@ function Run_FastEWA(parameters::Tuple{Vector{Int64},Vector{Float64},Vector{Vect
     T=10000)
     s₀, μ₀, Q₀, N₀, α, κ, δ, β, game = parameters
     payoff, NE = game
-
+    conv = T
     # convergence criterion is whether the expectation of the histories of play are an NE
     local NE_found = false # set to true if converged = NE 
     sₜ, μ, Qₜ, Nₜ = EWA_step!(s₀, μ₀, Q₀, N₀, α, κ, δ, β, payoff) # the first EWA step is based on the priors
@@ -96,15 +96,54 @@ function Run_FastEWA(parameters::Tuple{Vector{Int64},Vector{Float64},Vector{Vect
         local μ₁, μ₂ = μ ./ (t + 1) # bayesian updating of a₁ probabilities 
         local σ = [[μ₁, 1 - μ₁], [μ₂, 1 - μ₂]] # compute mathematical expectation of strategies
 
-        if any(isapprox(σ, ne, atol=0.01) for ne in NE)
+        if any(isapprox(σ, ne, atol=0.005) for ne in NE)
             NE_found = true # break if converged expectation is a NE
             # future: check for multiple NE, FP, limit cycles, chaos
+            conv = t
             break
         end
     end
-    μ₁, μ₂ = μ ./ (T + 1)
+    μ₁, μ₂ = μ ./ (conv)
     σ = [[μ₁, 1 - μ₁], [μ₂, 1 - μ₂]]
     return sₜ, σ, Qₜ, NE_found
+end
+
+function multicat_FastEWA(parameters::Tuple{Vector{Int64},Vector{Float64},Vector{Vector{Float64}},Float64,Float64,Float64,Float64,Float64,Vector{Vector}};
+    T=10000)
+    s₀, μ₀, Q₀, N₀, α, κ, δ, β, game = parameters
+    payoff, NE = game
+
+    # convergence criterion is whether the expectation of the histories of play are an NE
+    local cycles, pure_NE, mixed_NE, FP = true, false, false, false # set to true if converged = NE 
+    conv = T
+    sₜ, μ, Qₜ, Nₜ = EWA_step!(s₀, μ₀, Q₀, N₀, α, κ, δ, β, payoff) # the first EWA step is based on the priors
+    @inbounds for t in 1:T # T=1000 is assumed to be close enough to ∞, test this for more rigor (low T is required for speed).
+        old_μ = μ
+        old_μ₁, old_μ₂ = old_μ ./ t
+        old_σ = [[old_μ₁, 1 - old_μ₁], [old_μ₂, 1 - old_μ₂]]
+        sₜ, μ, Qₜ, Nₜ = EWA_step!(sₜ, μ, Qₜ, Nₜ, α, κ, δ, β, payoff)
+        μ₁, μ₂ = μ ./ (t + 1) # bayesian updating of a₁ probabilities 
+        σ = [[μ₁, 1 - μ₁], [μ₂, 1 - μ₂]] # compute mathematical expectation of strategies
+        if t > 1000 && any(isapprox(old_σ, σ, atol=0.001))
+            cycles = false # break if converged expectation is a NE
+            # future: check for multiple NE, FP, limit cycles, chaos
+            if any(isapprox(σ, ne, atol=0.01) for ne in NE)
+                if any(x -> isapprox(x, 1.0, atol=0.01), σ[1])
+                    pure_NE = true
+                else
+                    mixed_NE = true
+                end
+            else
+                FP = true
+            end
+            conv = t
+            break
+        end
+
+    end
+    μ₁, μ₂ = μ ./ (conv) # bayesian updating of a₁ probabilities 
+    σ = [[μ₁, 1 - μ₁], [μ₂, 1 - μ₂]]
+    return sₜ, σ, Qₜ, cycles, pure_NE, mixed_NE, FP
 end
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
