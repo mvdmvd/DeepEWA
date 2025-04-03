@@ -91,16 +91,17 @@ function Run_FastEWA(parameters::Tuple{Vector{Int64},Vector{Float64},Vector{Vect
     # convergence criterion is whether the expectation of the histories of play are an NE
     local NE_found = false # set to true if converged = NE 
     sₜ, μ, Qₜ, Nₜ = EWA_step!(s₀, μ₀, Q₀, N₀, α, κ, δ, β, payoff) # the first EWA step is based on the priors
-    @inbounds for t in 1:T # T=1000 is assumed to be close enough to ∞, test this for more rigor (low T is required for speed).
+    @inbounds for t in 1:T # T=1000 is assumed to be close enough to ∞, test this for more rigor (low T is required for speed)
         sₜ, μ, Qₜ, Nₜ = EWA_step!(sₜ, μ, Qₜ, Nₜ, α, κ, δ, β, payoff)
         local μ₁, μ₂ = μ ./ (t + 1) # bayesian updating of a₁ probabilities 
-        local σ = [[μ₁, 1 - μ₁], [μ₂, 1 - μ₂]] # 
+        local σ = [[μ₁, 1 - μ₁], [μ₂, 1 - μ₂]] # Mathematical expectation of strategies
 
         if any(isapprox(σ, ne, atol=0.1) for ne in NE)
-            NE_found = true
-            break
-        end
-    end
+            NE_found = true # check if this expectation is an NE, break early if so
+            break           # no convergence or convergence to FP, or mixed FP that is not NE is treated equally
+        end                 # a good next step is to classify into 1. limit cycles / chaos, 2. single pure NE, 3. Mult. pure NE, 4. single FP, 5. mMult. FP
+    end                     # however this is tricky to do fast. for multiple solutions need to run the same parameters n times
+    # for limit cycles or chaos, check if expected strategies converge, if not classify as true
     μ₁, μ₂ = μ ./ (T + 1)
     σ = [[μ₁, 1 - μ₁], [μ₂, 1 - μ₂]]
     return sₜ, σ, Qₜ, NE_found
@@ -108,7 +109,6 @@ end
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 ############################################################################################################################################
-
 end
 
 
