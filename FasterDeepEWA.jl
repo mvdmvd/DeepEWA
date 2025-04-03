@@ -2,14 +2,6 @@ module fEWA
 
 using Distributions, NNlib, GameTheory # NNlib for numerically stable softmax
 
-
-# some example games
-
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# # GameTheory solutions
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-
 function find_NE_mixed(payoff)
     g = NormalFormGame([Player(payoff[1]), Player(payoff[2])])
     found = support_enumeration(g)
@@ -28,7 +20,7 @@ end
 # # Initialisation
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 dom = [[5 0; 20 1], [5 0; 20 1]]
-dom_nash = fEWA.find_NE_pure(dom)
+dom_nash = fEWA.find_NE_mixed(dom)
 dom_game = [dom, dom_nash]
 
 function init_EWA(;
@@ -49,7 +41,7 @@ end
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 
 function EWA_step!(
-    sₜ::Vector{Int64}, Qₜ::Vector{Vector{Float64}}, Nₜ::Float64,
+    sₜ::Vector{Int64}, μ::Vector{Float64}, Qₜ::Vector{Vector{Float64}}, Nₜ::Float64,
     α::Float64, κ::Float64, δ::Float64, β::Float64, payoff::Vector{Matrix{Int64}})
 
     # new actions
@@ -62,8 +54,8 @@ function EWA_step!(
             elseif Q₁ < Q₂
                 sₜ[i] = 2
                 continue
-            else
-                p₁ = 0.5 # tie breaker, I guess this is still stochastic, maybe choose deterministically?
+            else # tie breaker, I guess this is still stochastic, maybe choose deterministically?
+                sₜ[i] = (rand(Bernoulli(0.5)) == 1 ? 1 : 2)
             end
         else
             local s1 = β * Q₁
@@ -72,8 +64,10 @@ function EWA_step!(
             local exp1 = exp(s1 - m)
             local exp2 = exp(s2 - m)
             local p₁ = exp1 / (exp1 + exp2)
+            sₜ[i] = (rand(Bernoulli(p₁)) == 1 ? 1 : 2)
         end
-        sₜ[i] = (rand(Bernoulli(p₁)) == 1 ? 1 : 2) # draw an action from the mixed strategy vector. 2-Binomial(μ)= 1 with P=μ, 2 else.
+        μ[i] += sₜ[i] == 1 ? 1.0 : 0.0
+        # draw an action from the mixed strategy vector. 2-Binomial(μ)= 1 with P=μ, 2 else.
     end
 
     local Nₙ = (1 - α) * (1 - κ) * Nₜ + 1 # incremented history
@@ -87,38 +81,23 @@ function EWA_step!(
             Qₜ[i][aᵢ] = ((1 - α) * Nₜ * oldQ + (δ + (1 - δ) * I) * Πₐ) / Nₙ # EWA updating rule
         end
     end
-    return sₜ, Qₜ, Nₜ
+    return sₜ, μ, Qₜ, Nₜ
 end
 
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-# # Run simulation
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
-
-function run_EWA_pure(parameters; T=1000000)
+function Run_FastEWA(parameters::Tuple{Vector{Int64},Vector{Vector{Float64}},Float64,Float64,Float64,Float64,Float64,Any}; T=10000)
     s₀, Q₀, N₀, α, κ, δ, β, game = parameters
     payoff, NE = game
-
-    aₜ = [0.0]
-    conv, window, lim_chaos, NE_found = 0, 0, false, false
-    sₜ, Qₜ, Nₜ = EWA_step!(s₀, Q₀, N₀, α, κ, δ, β, payoff) # first iter from priors
+    μ₀ = [0.0, 0.0]
+    local NE_found = false
+    sₜ, μ, Qₜ, Nₜ = EWA_step!(s₀, μ₀, Q₀, N₀, α, κ, δ, β, payoff) # first iter from priors
     @inbounds for t in 1:T
-        old_a = aₜ
-        sₜ, Qₜ, Nₜ = EWA_step!(sₜ, Qₜ, Nₜ, α, κ, δ, β, payoff)
-        aₜ = sₜ
-        window += (old_a == aₜ) ? 1 : (window > 0 ? -window : 0)
-        if window == 100
-            conv = t
-            break
-        elseif t == T
-            lim_chaos = true
-            break
-        end
+        sₜ, μ, Qₜ, Nₜ = EWA_step!(sₜ, μ, Qₜ, Nₜ, α, κ, δ, β, payoff)
     end
+    μ₁, μ₂ = μ ./ (T + 1)
+    σ = [[μ₁, 1 - μ₁], [μ₂, 1 - μ₂]]
 
-    NE_found = sₜ ∈ NE ? true : NE_found
-
-    return sₜ, Qₜ, lim_chaos, NE_found
+    NE_found = any(isapprox(σ, ne, atol=0.1) for ne in NE) ? true : NE_found
+    return sₜ, σ, Qₜ, NE_found
 end
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
