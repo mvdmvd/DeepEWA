@@ -1,6 +1,6 @@
 module fEWA
 
-using Distributions, NNlib, GameTheory # NNlib for numerically stable softmax
+using Distributions, GameTheory
 
 function find_NE_mixed(payoff)
     g = NormalFormGame([Player(payoff[1]), Player(payoff[2])])
@@ -9,12 +9,14 @@ function find_NE_mixed(payoff)
     return NE
 end
 
+#=
 function find_NE_pure(payoff)
     g = NormalFormGame([Player(payoff[1]), Player(payoff[2])])
     found = pure_nash(g)
     NE = [collect(ne) for ne in found]
     return NE
 end
+=#
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 # # Initialisation
@@ -58,7 +60,7 @@ function EWA_step!(
             else # tie breaker, I guess this is still stochastic, maybe choose deterministically?
                 sₜ[i] = (rand(Bernoulli(0.5)) == 1 ? 1 : 2)
             end
-        else
+        else # Numerically stable softmax
             local s1 = β * Q₁
             local s2 = β * Q₂
             local m = s1 > s2 ? s1 : s2
@@ -68,7 +70,6 @@ function EWA_step!(
             sₜ[i] = (rand(Bernoulli(p₁)) == 1 ? 1 : 2)
         end
         μ[i] += sₜ[i] == 1 ? 1.0 : 0.0
-        # draw an action from the mixed strategy vector. 2-Binomial(μ)= 1 with P=μ, 2 else.
     end
 
     local Nₙ = (1 - α) * (1 - κ) * Nₜ + 1 # incremented history
