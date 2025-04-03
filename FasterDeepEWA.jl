@@ -25,6 +25,7 @@ dom_game = [dom, dom_nash]
 
 function init_EWA(;
     s₀=[0, 0],
+    μ₀=[0.0, 0.0],
     Q₀=[[0.0, 0.0], [0.0, 0.0]], # Prior attractions
     N₀=0.0,
     α=1.0,
@@ -33,7 +34,7 @@ function init_EWA(;
     β=Inf64,
     game=dom_game
 )
-    return s₀, Q₀, N₀, α, κ, δ, β, game # default params is best response dynamics
+    return s₀, μ₀, Q₀, N₀, α, κ, δ, β, game # default params is best response dynamics
 end
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
@@ -84,19 +85,26 @@ function EWA_step!(
     return sₜ, μ, Qₜ, Nₜ
 end
 
-function Run_FastEWA(parameters::Tuple{Vector{Int64},Vector{Vector{Float64}},Float64,Float64,Float64,Float64,Float64,Any}; T=10000)
-    s₀, Q₀, N₀, α, κ, δ, β, game = parameters
+function Run_FastEWA(parameters::Tuple{Vector{Int64},Vector{Float64},Vector{Vector{Float64}},Float64,Float64,Float64,Float64,Float64,Vector{Vector}};
+    T=1000)
+    s₀, μ₀, Q₀, N₀, α, κ, δ, β, game = parameters
     payoff, NE = game
-    μ₀ = [0.0, 0.0]
+
     local NE_found = false
     sₜ, μ, Qₜ, Nₜ = EWA_step!(s₀, μ₀, Q₀, N₀, α, κ, δ, β, payoff) # first iter from priors
+
     @inbounds for t in 1:T
         sₜ, μ, Qₜ, Nₜ = EWA_step!(sₜ, μ, Qₜ, Nₜ, α, κ, δ, β, payoff)
+        local μ₁, μ₂ = μ ./ (t + 1)
+        local σ = [[μ₁, 1 - μ₁], [μ₂, 1 - μ₂]]
+
+        if any(isapprox(σ, ne, atol=0.1) for ne in NE)
+            NE_found = true
+            break
+        end
     end
     μ₁, μ₂ = μ ./ (T + 1)
     σ = [[μ₁, 1 - μ₁], [μ₂, 1 - μ₂]]
-
-    NE_found = any(isapprox(σ, ne, atol=0.1) for ne in NE) ? true : NE_found
     return sₜ, σ, Qₜ, NE_found
 end
 
