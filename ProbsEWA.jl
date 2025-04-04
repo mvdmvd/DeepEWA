@@ -57,7 +57,7 @@ end
 
 
 function multicat_pEWA(parameters::Tuple{Vector{Int64},Vector{Any},Vector{Vector{Float64}},Float64,Float64,Float64,Float64,Float64,Vector{Vector}};
-    T=4000)
+    T=10000)
     s₀, μ₀, Q₀, N₀, α, κ, δ, β, game = parameters
     payoff, NE = game
 
