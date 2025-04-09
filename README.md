@@ -10,3 +10,15 @@ ProbsEWA.jl contains the algorithm that classifies the convergence of a specific
 This algorithm is used in DeepEWA_game.jl, which generates data for the training of a neural network for the predicting of convergence propetries of EWA.
 
 Dependencies can be found in dependencies.jl
+
+---
+### Running training
+
+```shell
+# run the character segmentation and classification pipeline 
+# on a folder containing .png files
+PATH_TO_JULIA DeepEWA_game.jl
+```
+
+---
+
