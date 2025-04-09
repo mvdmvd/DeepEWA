@@ -59,10 +59,10 @@ function multicat_pEWA(parameters::Tuple{Vector{Int64},Vector{Any},Vector{Vector
 
     # convergence criterion is whether the expectation of the histories of play are an NE
     local cat = 1 # 1 = cycles/chaos, 2 = mixed FP, 3 = pure FP, 4= pure NE
-    sₜ, μ, Qₜ, Nₜ = probsEWA_step!(s₀, μ₀, Q₀, N₀, α, κ, δ, β, payoff) # the first EWA step is based on the priors
+    sₜ, μ, Qₜ, Nₜ = pEWA_step!(s₀, μ₀, Q₀, N₀, α, κ, δ, β, payoff) # the first EWA step is based on the priors
     @inbounds for t in 1:T # after T iterations, classifies as cycles/chaos
         sₜ, μ, Qₜ, Nₜ = pEWA_step!(sₜ, μ, Qₜ, Nₜ, α, κ, δ, β, payoff)
-        if t > 6 && all(isapprox(μ[end-3:end-1], μ[end-2:end], atol=0.05)) # tolerance level ϵ₁
+        if t > 6 && all(isapprox(μ[end-3:end-1], μ[end-2:end], atol=0.003)) # tolerance level ϵ₁
             if any(isapprox(μ[end], ne, atol=0.001) for ne in NE) # tolerance level ϵ₂
                 cat = 4
             else
