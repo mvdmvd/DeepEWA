@@ -1,13 +1,12 @@
 module pEWA
 using Distributions, GameTheory
-################
+
 function find_NE_mixed(payoff::Vector{Matrix{Int64}})
     g = NormalFormGame([Player(payoff[1]), Player(payoff[2])]) # GameTheory.jl game formatting
     found = support_enumeration(g) # solve for NE with GameTheory.jl
     NE = [collect(ne) for ne in found] # convert to regular vector
     return NE
 end
-
 
 function init_pEWA(; # initialisation function
     s₀=[0, 0],                   # empty actions vector
@@ -22,9 +21,7 @@ function init_pEWA(; # initialisation function
     return s₀, μ₀, Q₀, N₀, α, κ, δ, β, game # default parameterisation: best response dynamics for a domination game (pure NE always found). 
 end
 
-
-
-function probsEWA_step!( # step function first selects actions based off attractions, then updates attractions based off actions
+function pEWA_step!( # step function first selects actions based off attractions, then updates attractions based off actions
     sₜ::Vector{Int64}, μ::Vector{Any}, Qₜ::Vector{Vector{Float64}}, Nₜ::Float64,
     α::Float64, κ::Float64, δ::Float64, β::Float64, payoff::Vector{Matrix{Int64}})
 
@@ -36,8 +33,8 @@ function probsEWA_step!( # step function first selects actions based off attract
         local m = s1 > s2 ? s1 : s2 # find max
         local exp1, exp2 = exp(s1 - m), exp(s2 - m)
         local p₁ = exp1 / (exp1 + exp2) # softmax, subtracting the max for numerical stability
-        sₜ[i] = rand(Bernoulli(p₁)) == 1 ? 1 : 2
-        σ[i] = [p₁, 1 - p₁]
+        sₜ[i] = rand(Bernoulli(p₁)) == 1 ? 1 : 2 # draw action
+        σ[i] = [p₁, 1 - p₁] # store mixed strategy
     end
     push!(μ, σ)
 
@@ -55,29 +52,25 @@ function probsEWA_step!( # step function first selects actions based off attract
     return sₜ, μ, Qₜ, Nₜ
 end
 
-
 function multicat_pEWA(parameters::Tuple{Vector{Int64},Vector{Any},Vector{Vector{Float64}},Float64,Float64,Float64,Float64,Float64,Vector{Vector}};
-    T=10000)
+    T=5000)
     s₀, μ₀, Q₀, N₀, α, κ, δ, β, game = parameters
     payoff, NE = game
 
     # convergence criterion is whether the expectation of the histories of play are an NE
     local cat = 1 # 1 = cycles/chaos, 2 = mixed FP, 3 = pure FP, 4= pure NE
     sₜ, μ, Qₜ, Nₜ = probsEWA_step!(s₀, μ₀, Q₀, N₀, α, κ, δ, β, payoff) # the first EWA step is based on the priors
-    @inbounds for t in 1:T
-        sₜ, μ, Qₜ, Nₜ = probsEWA_step!(sₜ, μ, Qₜ, Nₜ, α, κ, δ, β, payoff)
-        if t > 6 && all(isapprox(μ[end-5:end-1], μ[end-4:end], atol=0.005))
-            if any(isapprox(μ[end], ne, atol=0.003) for ne in NE)
+    @inbounds for t in 1:T # after T iterations, classifies as cycles/chaos
+        sₜ, μ, Qₜ, Nₜ = pEWA_step!(sₜ, μ, Qₜ, Nₜ, α, κ, δ, β, payoff)
+        if t > 6 && all(isapprox(μ[end-3:end-1], μ[end-2:end], atol=0.05)) # tolerance level ϵ₁
+            if any(isapprox(μ[end], ne, atol=0.001) for ne in NE) # tolerance level ϵ₂
                 cat = 4
             else
-                any(x -> isapprox(x, 1.0, atol=0.01), μ[end][1]) ? cat = 3 : cat = 2
+                any(x -> isapprox(x, 1.0, atol=0.003), μ[end][1]) ? cat = 3 : cat = 2 # tolerance level ϵ₃
             end
             break
         end
-
     end
-
     return cat
 end
-
 end

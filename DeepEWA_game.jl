@@ -3,12 +3,12 @@ using Flux, .pEWA, Random, IterTools, ProgressMeter, DataFrames, CSV, Statistics
 
 # Game setup
 coord = [[[5 1; 1 4], [5 1; 1 4]], pEWA.find_NE_mixed([[5 1; 1 4], [5 1; 1 4]])]
-dom = [[[1 3; 0 2],[1 0; 3 2]], pEWA.find_NE_mixed([[1 3; 0 2],[1 0; 3 2]])]
+dom = [[[1 3; 0 2], [1 0; 3 2]], pEWA.find_NE_mixed([[1 3; 0 2], [1 0; 3 2]])]
 cyclic = [[[5 1; 1 4], [-5 1; 1 -4]], pEWA.find_NE_mixed([[5 1; 1 4], [-5 1; 1 -4]])]
 
 # Choose game and number of samples
 game = dom
-points = 100_000
+points = 10_000
 
 # Parameter sampling
 α_grid, κ_grid, δ_grid = [rand(0.0:0.0001:1.0, points) for _ in 1:3]
@@ -19,7 +19,7 @@ combs = [[α_grid[i], κ_grid[i], δ_grid[i], β_grid[i], mat1s[i], mat2s[i]] fo
 
 # Split data
 split_idx = Int(floor(0.6 * points))
-x_train, x_test = combs[1:split_idx], combs[(split_idx + 1):end]
+x_train, x_test = combs[1:split_idx], combs[(split_idx+1):end]
 y_train = Vector{Int}(undef, split_idx)
 y_test = Vector{Int}(undef, points - split_idx)
 
