@@ -1,8 +1,12 @@
 # DeepEWA
 
+This project is based on Pangallo et al. (2021).
+
 We train a NN to predict the convergence characteristics of learning dynamics on 2x2 games.
 
-ProbsEWA.jl contains the algorithm that classifies the convergence of a specific combination of learning dynamics and game.
-DeepEWA.ipynb is a notebook that trains a NN to predict convergence classes.
+The code is written in [Julia](https://github.com/JuliaLang/julia)
 
-This project is based on Pangallo et al. (2021).
+ProbsEWA.jl contains the algorithm that classifies the convergence of a specific combination of learning dynamics and game.
+This algorithm is used in DeepEWA_game.jl, which generates data for the training of a neural network for the predicting of convergence propetries of EWA.
+
+Dependencies can be found in dependencies.jl
