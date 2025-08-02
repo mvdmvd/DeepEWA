@@ -3,7 +3,7 @@
 [![Julia](https://img.shields.io/badge/julia-v1.11+-blue.svg)](https://julialang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-This project implements a neural network approach to predict convergence characteristics of Experience-Weighted Attraction (EWA) learning dynamics in 2×2 games, based on Pangallo et al. (2022). This project was the final assignment for the course ''Computational Game Theory'', taught by Prof. Davide Grossi, and was graded 9.7/10.
+This project implements a neural network approach to predict convergence characteristics of Experience-Weighted Attraction (EWA) learning dynamics in 2×2 games, based on Pangallo et al. (2022). This project was the final assignment for the course ''Computational Game Theory'', taught by Prof. Davide Grossi, and was graded 9.7/10. Please refer to DeepEWA_GitHub.pdf for our paper.
 
 ## Overview
 
@@ -50,7 +50,7 @@ DeepEWA/
 ├── notebooks NN/         # NN experiments
 ├── versions EWA/         # Older versions
 ├── literature/           # References
-└── paper/                # Submitted assignment
+└── paper/                # Paper
 ```
 
 ## Installation
