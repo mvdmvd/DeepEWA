@@ -90,7 +90,7 @@ Example accuracy results:
 
 ## References
 
-- Pangallo, M., et al. (2024). "Learning dynamics prediction in game theory"
+- Pangallo, M., et al. (2022). "Towards a taxonomy of learning dynamics in 2 × 2 games"
 - Camerer, C., & Ho, T. H. (1999). "Experience-weighted attraction learning in normal form games"
 
 
