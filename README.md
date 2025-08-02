@@ -7,7 +7,18 @@ This project implements a neural network approach to predict convergence charact
 
 ## Overview
 
-EWA learning is a general model that encompasses various learning algorithms in game theory, including:
+Experience Weighted Attraction generalizes various learning algorithms in game theory:
+**Attraction updating function**:
+$$
+Q_{i}^{\mu}(t) = \frac{(1-\alpha) N(t-1) Q_{i}^{\mu}(t-1)}{N(t)} + \frac{\left[ \delta + (1-\delta) \mathbb{I}(s_i^\mu,s^{-\mu}(t)) \right] \Pi^\mu(s_i^\mu, s^{-\mu}(t))}{N(t)}
+$$
+
+**Action selection**:
+$$
+\sigma^{\mu}(t)=\frac{e^{\beta Q_1^R (t)}}{e^{\beta Q_1^R (t)} + e^{\beta Q_2^R (t)}}
+$$
+
+Special cases include:
 - **Best Response Dynamics** (α=1, β=∞, δ=1)
 - **Fictitious Play** (α=0, β=∞, δ=1, κ=0) 
 - **Reinforcement Learning** (δ=0)
