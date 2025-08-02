@@ -12,13 +12,13 @@ Experience Weighted Attraction generalizes various learning algorithms in game t
 **Attraction updating function**:
 
 ```math
-Q_{i}^{\mu}(t) = \frac{(1-\alpha) N(t-1) Q_{i}^{\mu}(t-1)}{N(t)} + \frac{\left[ \delta + (1-\delta) \mathbb{I}(s_i^\mu,s^{-\mu}(t)) \right] \Pi^\mu(s_i^\mu, s^{-\mu}(t))}{N(t)}
+Q_{i}^{a}(t) = \frac{(1-\alpha) \mathcal{N}(t-1) Q_{i}^{a}(t-1)}{\mathcal{N}(t)} + \frac{\left[ \delta + (1-\delta) \mathbb{I}(s_i^a,s_{-i}(t)) \right] \Pi_i(s_i^a, s_{-i}(t))}{\mathcal{N}(t)} 
 ```
 
 **Action selection**:
 
 ```math
-\sigma^{\mu}(t)=\frac{e^{\beta Q_1^R (t)}}{e^{\beta Q_1^R (t)} + e^{\beta Q_2^R (t)}}
+\mu_i(t)=\frac{e^{\beta Q_1 (t)}}{e^{\beta Q_1^a (t)} + e^{\beta Q_2^b (t)}}
 ```
 
 Special cases include:
